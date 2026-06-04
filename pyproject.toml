@@ -1,0 +1,55 @@
+[project]
+name = "topbar-runner"
+version = "0.1.0"
+description = "Cross-platform xbar-style floating topbar host."
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "pillow>=10",
+  "PySide6-Essentials>=6.8",
+  "psutil>=6",
+  "requests>=2.32",
+  "tomli; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.11",
+]
+
+[project.scripts]
+topbar-runner = "topbar_runner.cli:main"
+dev = "topbar_runner.cli:dev_main"
+
+[tool.poetry]
+packages = [{ include = "topbar_runner" }]
+
+[tool.poetry.dependencies]
+PySide6-Essentials = ">=6.8"
+beautifulsoup4 = ">=4.12"
+pillow = ">=10"
+psutil = ">=6"
+python = ">=3.11,<3.15"
+requests = ">=2.32"
+tomli = { version = "*", python = "<3.11" }
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = ">=4"
+pytest = ">=8"
+ruff = ">=0.11"
+yamllint = ">=1.35"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

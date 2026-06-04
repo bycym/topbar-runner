@@ -1,0 +1,27 @@
+.DS_Store
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Poetry files
+.venv/
+/poetry.toml
+
+# Build files
+dist/
+build/
+*.egg-info/
+
+# Environments
+.env
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+*.log
+.topbar-runner.toml

@@ -1,0 +1,50 @@
+# Features
+
+## v1 Floating Topbar Host
+
+- Frameless, draggable, always-on-top PySide6 topbar window.
+- One configured plugin directory with direct-child plugin discovery only.
+- Lexical plugin ordering by filename.
+- xbar-style interval filenames: `name.5s.py`, `name.15m.py`, `name.1h.py`, `name.1d.py`.
+- Python plugin support by default, plus shell plugin files ending in `.sh`.
+- xbar/BitBar stdout parsing for headline, separators, submenus, and item attributes.
+- `dropdown=false` top-level items become extra topbar chips.
+- `alternate=true` popup items display while Alt/Option is held.
+- Supported item styling attributes: `color`, `font`, `size`, `length`.
+- Supported rich attributes: `image`, `templateImage`.
+- Image-only headline chips render as bounded icon chips with plugin-name fallback.
+- Image-only popup rows render as bounded full image buttons.
+- Nested xbar menu items open as hover submenus and close on hover-out after a short delay.
+- `refresh=true` rows rerun the plugin script and close the full popup stack.
+- Supported safe actions: `href`, `copy`, and `refresh=true`.
+- `href` opens only allowlisted URL schemes: `http`, `https`, `mailto`.
+- Per-plugin runtime metadata through optional commented TOML.
+- Runtime env variables exposed to plugins:
+  - `TOPBAR_RUNNER_REASON`
+  - `TOPBAR_RUNNER_PLUGIN_PATH`
+  - `TOPBAR_RUNNER_PLUGIN_DIR`
+  - `TOPBAR_RUNNER_CONFIG_PATH`
+  - `TOPBAR_RUNNER_HOST_OS`
+- Same plugin never overlaps with itself; overlapping triggers coalesce to one pending rerun.
+- Default plugin timeout is 10 seconds, with per-plugin override.
+- Failed or timed-out plugins keep last good cached render and show stale state.
+- Plugin process working directory is the plugin directory.
+- Plugin directory and plugin files are watched; real plugin file changes are debounced before reload and rerun.
+- Local TOML config stores plugin directory, theme, topmost setting, launch-at-login flag, and window geometry.
+- Local TOML config can order plugins by filename and disable plugins by filename.
+- UI watches both plugin files and the config file; external config changes are debounced and applied.
+- Settings dialog edits plugin directory, theme, topmost setting, and launch-at-login flag.
+- Floating bar auto-fits plugin chips after reloads and render updates, clamped to available screen width.
+- Default config path follows platform conventions:
+  - macOS: `~/Library/Application Support/topbar-runner/config.toml`
+  - Linux: `$XDG_CONFIG_HOME/topbar-runner/config.toml` or `~/.config/topbar-runner/config.toml`
+  - Windows: `%APPDATA%\\topbar-runner\\config.toml`
+- Launch-at-login writes native user startup files:
+  - macOS LaunchAgent plist.
+  - Linux XDG autostart desktop file.
+  - Windows Startup folder batch file.
+- Portable packaging flow is documented under `packaging/` with a PyInstaller spec for macOS, Linux, and Windows builds.
+- GitHub Actions CI runs Ruff and tests on macOS, Linux, and Windows.
+- Diagnostic logging writes to a local log file.
+- CLI `--debug` writes DEBUG diagnostics and mirrors logs to stderr.
+- UI `--debug` writes DEBUG diagnostics and mirrors logs to stderr.
