@@ -20,7 +20,8 @@ def test_launch_command_starts_frozen_app_directly(tmp_path: Path, monkeypatch) 
     assert launch_command(config_path) == [sys.executable, "--config-path", str(config_path)]
 
 
-def test_set_launch_at_login_writes_linux_desktop_file(tmp_path: Path) -> None:
+def test_set_launch_at_login_writes_linux_desktop_file(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "external-config"))
     path = set_launch_at_login(
         True,
         ["/bin/topbar-runner", "--config-path", "/tmp/config.toml"],

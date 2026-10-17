@@ -51,7 +51,8 @@ def _launch_file_path(
     env: dict[str, str] | None = None,
 ) -> Path:
     home = home or Path.home()
-    env = env or os.environ
+    if env is None:
+        env = os.environ
     if sys_platform == "darwin":
         return home / "Library" / "LaunchAgents" / f"{app_id}.plist"
     if sys_platform == "win32":
