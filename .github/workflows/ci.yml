@@ -1,22 +1,52 @@
 ---
-name: CI
+name: Build and release
 
 on:
   workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - "v*"
+    inputs:
+      publish_release:
+        description: Publish a GitHub Release after all builds pass
+        type: boolean
+        default: false
+      release_tag:
+        description: Version tag for release (for example, v0.1.0); leave empty for build only
+        type: string
+        required: false
 
 permissions:
   contents: read
 
 jobs:
+  validate:
+    name: Validate release options
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check release tag
+        env:
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          if [[ "$PUBLISH_RELEASE" != "true" ]]; then
+            exit 0
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Set release_tag to a version tag such as v0.1.0." >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+              echo "Tag $RELEASE_TAG points to $tag_commit, not build commit $GITHUB_SHA." >&2
+              exit 1
+            fi
+          fi
+
   test:
     name: Python ${{ matrix.python-version }} / ${{ matrix.os }}
+    needs: validate
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,7 +79,6 @@ jobs:
   build:
     name: Build / ${{ matrix.platform }}
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -63,6 +92,7 @@ jobs:
             platform: windows
     env:
       QT_QPA_PLATFORM: offscreen
+      ARCHIVE_LABEL: ${{ inputs.publish_release && inputs.release_tag || github.run_id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -90,27 +120,31 @@ jobs:
         run: dist/topbar-runner/topbar-runner.exe --console --plugin-dir examples/plugins
       - name: Archive macOS app
         if: runner.os == 'macOS'
-        run: tar -C dist -czf "topbar-runner-${{ github.ref_name }}-macos.tar.gz" topbar-runner.app
+        run: tar -C dist -czf "topbar-runner-${ARCHIVE_LABEL}-macos.tar.gz" topbar-runner.app
       - name: Archive Linux app
         if: runner.os == 'Linux'
-        run: tar -C dist -czf "topbar-runner-${{ github.ref_name }}-ubuntu.tar.gz" topbar-runner
+        run: tar -C dist -czf "topbar-runner-${ARCHIVE_LABEL}-ubuntu.tar.gz" topbar-runner
       - name: Archive Windows app
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist/topbar-runner -DestinationPath "topbar-runner-${{ github.ref_name }}-windows.zip"
+        run: Compress-Archive -Path dist/topbar-runner -DestinationPath "topbar-runner-$($env:ARCHIVE_LABEL)-windows.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: topbar-runner-${{ matrix.platform }}
-          path: topbar-runner-${{ github.ref_name }}-${{ matrix.platform }}.*
+          path: topbar-runner-${{ env.ARCHIVE_LABEL }}-${{ matrix.platform }}.*
           if-no-files-found: error
 
   release:
     name: Publish release
     needs: build
+    if: inputs.publish_release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           pattern: topbar-runner-*
@@ -120,4 +154,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: gh release create "$RELEASE_TAG" release/* --target "$GITHUB_SHA" --generate-notes

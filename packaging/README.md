@@ -2,7 +2,7 @@
 
 Portable builds use PyInstaller. Keep runtime dependencies in `pyproject.toml`; install PyInstaller only in build environments.
 
-Push a `v*` tag to run the release workflow. It tests all platforms, builds and smoke tests each native app, then publishes macOS and Ubuntu `.tar.gz` archives plus a Windows `.zip` archive to GitHub Releases. The Ubuntu runner installs Qt's required system libraries, including `libegl1`, before tests and packaging.
+Run `Build and release` manually in GitHub Actions. Each run tests all platforms, builds and smoke tests each native app, and saves macOS and Ubuntu `.tar.gz` archives plus a Windows `.zip` archive as workflow artifacts. Select `Publish a GitHub Release` and enter a version tag such as `v0.1.0` to publish those archives. An existing tag must point to the selected commit; if absent, publication creates it at that commit. The Ubuntu runner installs Qt's required system libraries, including `libegl1`, before tests and packaging.
 
 Portable apps run Python plugins with a separate `python3` or `python` executable found on `PATH`; users need Python installed. A plugin can override its interpreter in metadata. On macOS and Linux, shell plugins use `bash`.
 
