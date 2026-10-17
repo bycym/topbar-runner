@@ -3,11 +3,16 @@ name: CI
 
 on:
   workflow_dispatch:
-  # pull_request:
-  # push:
-  #   branches:
-  #     - main
-  #     - master
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -29,6 +34,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Linux Qt libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0
       - name: Install Poetry
         run: python -m pip install poetry
       - name: Install dependencies
@@ -37,3 +45,79 @@ jobs:
         run: poetry run ruff check .
       - name: Tests
         run: poetry run pytest
+
+  build:
+    name: Build / ${{ matrix.platform }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos
+          - os: ubuntu-latest
+            platform: ubuntu
+          - os: windows-latest
+            platform: windows
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Linux Qt libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0
+      - name: Install Poetry
+        run: python -m pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Install PyInstaller
+        run: poetry run python -m pip install "pyinstaller>=6.16,<7"
+      - name: Build app
+        run: poetry run pyinstaller --noconfirm packaging/pyinstaller/topbar-runner.spec
+      - name: Smoke test packaged app
+        if: runner.os == 'Linux'
+        run: dist/topbar-runner/topbar-runner --console --plugin-dir examples/plugins
+      - name: Smoke test packaged app
+        if: runner.os == 'macOS'
+        run: dist/topbar-runner.app/Contents/MacOS/topbar-runner --console --plugin-dir examples/plugins
+      - name: Smoke test packaged app
+        if: runner.os == 'Windows'
+        run: dist/topbar-runner/topbar-runner.exe --console --plugin-dir examples/plugins
+      - name: Archive macOS app
+        if: runner.os == 'macOS'
+        run: tar -C dist -czf "topbar-runner-${{ github.ref_name }}-macos.tar.gz" topbar-runner.app
+      - name: Archive Linux app
+        if: runner.os == 'Linux'
+        run: tar -C dist -czf "topbar-runner-${{ github.ref_name }}-ubuntu.tar.gz" topbar-runner
+      - name: Archive Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/topbar-runner -DestinationPath "topbar-runner-${{ github.ref_name }}-windows.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: topbar-runner-${{ matrix.platform }}
+          path: topbar-runner-${{ github.ref_name }}-${{ matrix.platform }}.*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: topbar-runner-*
+          path: release
+          merge-multiple: true
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes

@@ -25,3 +25,5 @@ htmlcov/
 
 *.log
 .topbar-runner.toml
+
+.ruff_cache

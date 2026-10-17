@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from topbar_runner.launch_at_login import launch_command, set_launch_at_login
@@ -10,6 +11,13 @@ def test_launch_command_starts_app_with_config_path(tmp_path: Path) -> None:
 
     assert command[1:4] == ["-m", "topbar_runner.cli", "--config-path"]
     assert command[4] == str(config_path)
+
+
+def test_launch_command_starts_frozen_app_directly(tmp_path: Path, monkeypatch) -> None:
+    config_path = tmp_path / "config.toml"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+
+    assert launch_command(config_path) == [sys.executable, "--config-path", str(config_path)]
 
 
 def test_set_launch_at_login_writes_linux_desktop_file(tmp_path: Path) -> None:

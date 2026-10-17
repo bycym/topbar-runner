@@ -162,4 +162,6 @@ def runtime_from_plugin(plugin: PluginFile, config_path: Path) -> PluginRuntime:
 def _default_interpreter(plugin: PluginFile) -> str:
     if plugin.kind == "shell":
         return shutil.which("bash") or "/bin/bash"
+    if getattr(sys, "frozen", False):
+        return shutil.which("python3") or shutil.which("python") or "python"
     return sys.executable

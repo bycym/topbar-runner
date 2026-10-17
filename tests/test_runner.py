@@ -7,7 +7,23 @@ from pathlib import Path
 from topbar_runner.cache import RenderCache
 from topbar_runner.filenames import parse_plugin_filename
 from topbar_runner.parser import parse_stdout
-from topbar_runner.runner import PluginRunner, PluginRuntime
+from topbar_runner.runner import PluginRunner, PluginRuntime, runtime_from_plugin
+
+
+def test_frozen_app_uses_system_python_for_plugins(tmp_path: Path, monkeypatch) -> None:
+    script = tmp_path / "example.py"
+    script.write_text("print('OK')\n", encoding="utf-8")
+    plugin = parse_plugin_filename(script)
+    assert plugin is not None
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(
+        "topbar_runner.runner.shutil.which",
+        lambda name: "/usr/bin/python3" if name == "python3" else None,
+    )
+
+    runtime = runtime_from_plugin(plugin, tmp_path / "config.toml")
+
+    assert runtime.interpreter == "/usr/bin/python3"
 
 
 def test_runner_caches_success(tmp_path: Path) -> None:

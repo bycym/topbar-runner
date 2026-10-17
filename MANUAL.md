@@ -139,3 +139,5 @@ Console mode writes logs to `.topbar-runner.log` unless `--log-path` is passed.
 Portable build instructions live in `packaging/README.md`. The PyInstaller spec is `packaging/pyinstaller/topbar-runner.spec`.
 
 CI runs Ruff and tests across macOS, Linux, and Windows through `.github/workflows/ci.yml`.
+
+To publish a release, push a version tag such as `v0.1.0`. CI tests all three platforms, builds each app, runs a console smoke test, and attaches platform archives to a GitHub Release. Python plugins in portable builds use `python3` or `python` from the user's `PATH`, so install Python separately to run them. Shell plugins on macOS and Linux use `bash`.

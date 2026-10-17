@@ -11,6 +11,8 @@ APP_ID = "topbar-runner"
 
 
 def launch_command(config_path: Path) -> list[str]:
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--config-path", str(config_path)]
     return [
         sys.executable,
         "-m",

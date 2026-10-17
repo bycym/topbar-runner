@@ -1,8 +1,7 @@
 # PyInstaller spec for portable topbar-runner builds.
 
 from pathlib import Path
-
-from PyInstaller.utils.hooks import collect_submodules
+import sys
 
 ROOT = Path.cwd()
 
@@ -12,7 +11,7 @@ a = Analysis(
     pathex=[str(ROOT)],
     binaries=[],
     datas=[(str(ROOT / "examples" / "plugins"), "examples/plugins")],
-    hiddenimports=collect_submodules("PySide6"),
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -28,7 +27,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="topbar-runner",
-    debug=False,
+    debug=True,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
@@ -48,9 +47,10 @@ coll = COLLECT(
     upx_exclude=[],
     name="topbar-runner",
 )
-app = BUNDLE(
-    coll,
-    name="topbar-runner.app",
-    icon=None,
-    bundle_identifier="com.local.topbar-runner",
-)
+if sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name="topbar-runner.app",
+        icon=None,
+        bundle_identifier="com.local.topbar-runner",
+    )

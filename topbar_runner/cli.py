@@ -213,3 +213,7 @@ def _print_result(result: RunResult) -> None:
 
 def _count_items(items: list[MenuItem]) -> int:
     return sum(1 + _count_items(item.children) for item in items)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
