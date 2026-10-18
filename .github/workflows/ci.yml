@@ -86,9 +86,9 @@ jobs:
       matrix:
         include:
           - os: macos-14
-            platform: macos-arm64
+            platform: apple-silicon
           - os: macos-15-intel
-            platform: macos-x64
+            platform: intel
           - os: ubuntu-latest
             platform: ubuntu
           - os: windows-latest
@@ -120,10 +120,10 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          dist/topbar-runner.app/Contents/MacOS/topbar-runner \
+          cd /
+          "$GITHUB_WORKSPACE/dist/topbar-runner.app/Contents/MacOS/topbar-runner" \
             --config-path "$RUNNER_TEMP/topbar-runner-smoke.toml" \
-            --log-path "$RUNNER_TEMP/topbar-runner-smoke.log" \
-            --plugin-dir examples/plugins &
+            --plugin-dir "$GITHUB_WORKSPACE/examples/plugins" &
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true' EXIT
           sleep 5

@@ -131,11 +131,11 @@ Launch at login creates or removes a user-level startup file for the current pla
 
 ## Diagnostics
 
-The UI writes logs next to the app config path, using the same filename with `.log`.
+The UI writes logs next to the app config path, using the same filename with `.log`. Finder launches work even when its working directory is not writable. Pass `--log-path` to choose another location.
 Console mode writes logs to `.topbar-runner.log` unless `--log-path` is passed.
 
 ## Packaging
 
 Portable build instructions live in `packaging/README.md`. The PyInstaller spec is `packaging/pyinstaller/topbar-runner.spec`.
 
-Run `Build and release` manually from GitHub Actions. Every run tests, builds, and smoke tests Apple Silicon and Intel macOS, Ubuntu, and Windows apps, then keeps their archives as workflow artifacts. On macOS, choose `macos-arm64` for Apple Silicon or `macos-x64` for Intel. To publish them, select `Publish a GitHub Release` and enter a version tag such as `v0.1.0`. An existing tag must point to the selected build commit; if the tag does not exist, publication creates it at that commit. Python plugins in portable builds use `python3` or `python` from the user's `PATH`, so install Python separately to run them. Shell plugins on macOS and Linux use `bash`.
+Run `Build and release` manually from GitHub Actions. Every run tests, builds, and smoke tests Apple Silicon and Intel macOS, Ubuntu, and Windows apps, then keeps their archives as workflow artifacts. On macOS, choose the `apple-silicon` archive for Apple Silicon or `intel` for Intel. To publish them, select `Publish a GitHub Release` and enter a version tag such as `v0.1.0`. An existing tag must point to the selected build commit; if the tag does not exist, publication creates it at that commit. Python plugins in portable builds use `python3` or `python` from the user's `PATH`, so install Python separately to run them. Shell plugins on macOS and Linux use `bash`.

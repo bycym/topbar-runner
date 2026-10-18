@@ -88,7 +88,7 @@ def run_app_cli(argv: Sequence[str] | None = None) -> int:
                 "--config-path",
                 str(args.config_path),
                 "--log-path",
-                str(args.log_path),
+                str(args.log_path or Path(".topbar-runner.log")),
                 *(["--debug"] if args.debug else []),
             ]
         )
@@ -147,8 +147,8 @@ def _app_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--log-path",
         type=Path,
-        default=Path(".topbar-runner.log"),
-        help="Diagnostic log path.",
+        default=None,
+        help="Diagnostic log path (default: beside app config for UI mode).",
     )
     parser.add_argument(
         "--console",
