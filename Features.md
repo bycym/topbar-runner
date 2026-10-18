@@ -44,8 +44,8 @@
   - Linux XDG autostart desktop file.
   - Windows Startup folder batch file.
 - Portable packaging flow is documented under `packaging/` with a PyInstaller spec for macOS, Linux, and Windows builds.
-- Manually run GitHub Actions to test, build, and smoke test native macOS, Ubuntu, and Windows archives.
-- Optional release selection publishes all three archives under a supplied version tag after successful builds.
+- Manually run GitHub Actions to test, build, and smoke test Apple Silicon and Intel macOS, Ubuntu, and Windows archives.
+- Optional release selection publishes all four archives under a supplied version tag after successful builds.
 - Diagnostic logging writes to a local log file.
 - CLI `--debug` writes DEBUG diagnostics and mirrors logs to stderr.
 - UI `--debug` writes DEBUG diagnostics and mirrors logs to stderr.

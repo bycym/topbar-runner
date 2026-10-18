@@ -40,6 +40,12 @@ pytest = ">=8"
 ruff = ">=0.11"
 yamllint = ">=1.35"
 
+[tool.poetry.group.build]
+optional = true
+
+[tool.poetry.group.build.dependencies]
+pyinstaller = ">=6.16,<7"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
