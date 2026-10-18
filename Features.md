@@ -45,7 +45,7 @@
   - Windows Startup folder batch file.
 - Portable packaging flow is documented under `packaging/` with a PyInstaller spec for macOS, Linux, and Windows builds.
 - Manually run GitHub Actions to test, build, and smoke test `apple-silicon` and `intel` macOS archives, plus Ubuntu and Windows archives.
-- Optional release selection publishes all four archives under a supplied version tag after successful builds.
+- Optional release selection publishes all four archives under the next numeric Git tag, or a manually supplied tag, after successful builds.
 - Diagnostic logging writes to a local log file.
 - UI startup uses a config-based log path, so Finder launches do not depend on a writable working directory.
 - CLI `--debug` writes DEBUG diagnostics and mirrors logs to stderr.

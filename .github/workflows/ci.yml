@@ -9,33 +9,38 @@ on:
         type: boolean
         default: false
       release_tag:
-        description: Version tag for release (for example, v0.1.0); leave empty for build only
+        description: Optional version tag (for example, v2); leave empty to advance highest numeric tag
         type: string
         required: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.publish_release && 'release' || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate release options
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Check release tag
+      - name: Resolve release tag
+        id: version
+        if: inputs.publish_release
         env:
-          PUBLISH_RELEASE: ${{ inputs.publish_release }}
           RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python topbar_runner/release_version.py
+      - name: Check release tag
+        if: inputs.publish_release
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
         run: |
-          if [[ "$PUBLISH_RELEASE" != "true" ]]; then
-            exit 0
-          fi
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
-            echo "Set release_tag to a version tag such as v0.1.0." >&2
-            exit 1
-          fi
           if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
             tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
             if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
@@ -79,7 +84,7 @@ jobs:
 
   build:
     name: Build / ${{ matrix.platform }}
-    needs: test
+    needs: [validate, test]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -95,7 +100,7 @@ jobs:
             platform: windows
     env:
       QT_QPA_PLATFORM: offscreen
-      ARCHIVE_LABEL: ${{ inputs.publish_release && inputs.release_tag || github.run_id }}
+      ARCHIVE_LABEL: ${{ inputs.publish_release && needs.validate.outputs.release_tag || github.run_id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -155,7 +160,7 @@ jobs:
 
   release:
     name: Publish release
-    needs: build
+    needs: [validate, build]
     if: inputs.publish_release
     runs-on: ubuntu-latest
     permissions:
@@ -173,5 +178,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
         run: gh release create "$RELEASE_TAG" release/* --target "$GITHUB_SHA" --generate-notes
