@@ -1,9 +1,13 @@
 import os
 from pathlib import Path
 
+from topbar_runner.app_config import AppConfig
 from topbar_runner.ui import (
+    LogsDialog,
     MenuItem,
     QtCore,
+    QtWidgets,
+    TopbarWindow,
     _bounded_size,
     _chip_label,
     _chip_text,
@@ -83,3 +87,58 @@ def test_disconnect_process_accepts_unconnected_process() -> None:
     process = QtCore.QProcess()
 
     _disconnect_process(process)
+
+
+def test_three_dot_menu_can_quit(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    window = TopbarWindow(tmp_path / "config.toml", AppConfig(plugin_dir=tmp_path))
+    window.show()
+    chip = window.findChild(QtWidgets.QPushButton, "settingsChip")
+    assert chip is not None
+    menu = chip.menu()
+    assert menu is not None
+    assert [action.text() for action in menu.actions()] == ["Settings", "View Logs", "Quit"]
+
+    timed_out = []
+    guard = QtCore.QTimer()
+    guard.setSingleShot(True)
+    guard.timeout.connect(lambda: timed_out.append(True))
+    guard.timeout.connect(app.quit)
+    guard.start(2000)
+    QtCore.QTimer.singleShot(0, menu.actions()[2].trigger)
+    app.exec()
+    guard.stop()
+
+    assert not timed_out
+    window.close()
+
+
+def test_view_logs_shows_only_current_run_and_refreshes(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    log_path = tmp_path / "custom.log"
+    previous = "old run\n"
+    log_path.write_text(previous, encoding="utf-8")
+    window = TopbarWindow(
+        tmp_path / "config.toml", AppConfig(plugin_dir=tmp_path), log_path, len(previous)
+    )
+    chip = window.findChild(QtWidgets.QPushButton, "settingsChip")
+    assert chip is not None
+    menu = chip.menu()
+    assert menu is not None
+
+    with log_path.open("a", encoding="utf-8") as log_file:
+        log_file.write("plugin run failed: first error\n")
+    menu.actions()[1].trigger()
+    app.processEvents()
+    dialog = window.findChild(LogsDialog)
+    assert dialog is not None
+    assert dialog.output.toPlainText() == "plugin run failed: first error\n"
+
+    with log_path.open("a", encoding="utf-8") as log_file:
+        log_file.write("plugin run failed: second error\n")
+    dialog.refresh()
+    assert dialog.output.toPlainText().endswith("plugin run failed: second error\n")
+    assert "old run" not in dialog.output.toPlainText()
+    window.close()

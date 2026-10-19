@@ -101,12 +101,15 @@ Filesystem reloads are debounced and ignored unless the direct plugin files or t
 
 ## Settings
 
-Open `Settings` chip to change:
+Open the `...` menu and choose `Settings` to change:
 
 - Plugin directory.
 - Theme.
 - Keep on top.
 - Launch at login flag.
+
+Choose `Quit` from the same menu to exit the app.
+Choose `View Logs` to see live diagnostic messages from the current app run, including plugin failures and stderr. The window shows the log file path and refreshes while open. It follows `--log-path` when one is supplied.
 
 Window position and size are saved automatically when moved or resized.
 When plugins load or refresh, the bar expands to fit visible chips and clamps to the available screen width.

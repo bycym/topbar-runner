@@ -263,10 +263,19 @@ def _disconnect_process(process: QtCore.QProcess) -> None:
 class TopbarWindow(QtWidgets.QWidget):
     FILESYSTEM_RELOAD_DEBOUNCE_MS = 750
 
-    def __init__(self, config_path: Path, config: AppConfig) -> None:
+    def __init__(
+        self,
+        config_path: Path,
+        config: AppConfig,
+        log_path: Path | None = None,
+        log_start: int = 0,
+    ) -> None:
         super().__init__()
         self.config_path = config_path
         self.config = config
+        self.log_path = log_path or config_path.with_suffix(".log")
+        self.log_start = log_start
+        self._logs_dialog: LogsDialog | None = None
         self.cache = RenderCache()
         self.runner = QtPluginRunner(config_path, self.cache)
         self.runner.render_updated.connect(self._render_updated)
@@ -421,9 +430,13 @@ class TopbarWindow(QtWidgets.QWidget):
                 self._add_chip(plugin, item)
         settings = QtWidgets.QPushButton("...")
         settings.setObjectName("settingsChip")
-        settings.setToolTip("Settings")
+        settings.setToolTip("Settings, View Logs, and Quit")
         settings.setFixedWidth(32)
-        settings.clicked.connect(self._open_settings)
+        menu = QtWidgets.QMenu(settings)
+        menu.addAction("Settings", self._open_settings)
+        menu.addAction("View Logs", self._open_logs)
+        menu.addAction("Quit", QtWidgets.QApplication.quit)
+        settings.setMenu(menu)
         self._layout.addWidget(settings)
         self._fit_to_content()
 
@@ -485,6 +498,13 @@ class TopbarWindow(QtWidgets.QWidget):
             if self.config.plugin_dir != old_plugin_dir:
                 self._reload_plugins("settings")
             self.show()
+
+    def _open_logs(self) -> None:
+        if self._logs_dialog is None:
+            self._logs_dialog = LogsDialog(self.log_path, self.log_start, self)
+        self._logs_dialog.show()
+        self._logs_dialog.raise_()
+        self._logs_dialog.activateWindow()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
@@ -725,6 +745,52 @@ class PopupButton(QtWidgets.QPushButton):
         super().leaveEvent(event)
 
 
+class LogsDialog(QtWidgets.QDialog):
+    def __init__(self, log_path: Path, log_start: int, parent: QtWidgets.QWidget) -> None:
+        super().__init__(parent)
+        self.log_path = log_path
+        self.log_start = log_start
+        self.setWindowTitle("Current Run Logs")
+        self.resize(800, 500)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        self.output = QtWidgets.QPlainTextEdit()
+        self.output.setReadOnly(True)
+        self.output.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
+        self.output.setFont(
+            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont)
+        )
+        layout.addWidget(self.output)
+        layout.addWidget(QtWidgets.QLabel(str(log_path)))
+
+        self._refresh_timer = QtCore.QTimer(self)
+        self._refresh_timer.timeout.connect(self.refresh)
+
+    def refresh(self) -> None:
+        try:
+            with self.log_path.open("rb") as log_file:
+                size = log_file.seek(0, 2)
+                log_file.seek(self.log_start if size >= self.log_start else 0)
+                content = log_file.read().decode("utf-8", errors="replace")
+        except OSError as exc:
+            content = f"Could not read log {self.log_path}: {exc}"
+        if content != self.output.toPlainText():
+            scrollbar = self.output.verticalScrollBar()
+            position = scrollbar.value()
+            at_end = position == scrollbar.maximum()
+            self.output.setPlainText(content)
+            scrollbar.setValue(scrollbar.maximum() if at_end else position)
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        self.refresh()
+        self._refresh_timer.start(1000)
+        super().showEvent(event)
+
+    def hideEvent(self, event: QtGui.QHideEvent) -> None:
+        self._refresh_timer.stop()
+        super().hideEvent(event)
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, config: AppConfig, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -790,6 +856,7 @@ def run_app(
     if plugin_dir is not None:
         config.plugin_dir = plugin_dir
     log_path = log_path or config_path.with_suffix(".log")
+    log_start = log_path.stat().st_size if log_path.exists() else 0
     configure_file_logging(log_path, debug=debug, stderr=debug)
     get_logger().info(
         "ui starting: config_path=%s log_path=%s plugin_dir=%s debug=%s",
@@ -799,7 +866,7 @@ def run_app(
         debug,
     )
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    window = TopbarWindow(config_path, config)
+    window = TopbarWindow(config_path, config, log_path, log_start)
     window.show()
     return int(app.exec())
 
@@ -1002,6 +1069,16 @@ def _style_sheet(theme: str) -> str:
     #settingsChip {{
       color: {palette["muted"]};
       padding: 4px 0;
+    }}
+    QMenu {{
+      background: {palette["panel"]};
+      border: 1px solid {palette["border"]};
+    }}
+    QMenu::item {{
+      padding: 6px 24px;
+    }}
+    QMenu::item:selected {{
+      background: {palette["hover"]};
     }}
     #dragHandle {{
       color: {palette["muted"]};

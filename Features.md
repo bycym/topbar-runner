@@ -34,6 +34,7 @@
 - Local TOML config can order plugins by filename and disable plugins by filename.
 - UI watches both plugin files and the config file; external config changes are debounced and applied.
 - Settings dialog edits plugin directory, theme, topmost setting, and launch-at-login flag.
+- Three-dot menu opens Settings, shows live logs for the current run, or quits the app.
 - Floating bar auto-fits plugin chips after reloads and render updates, clamped to available screen width.
 - Default config path follows platform conventions:
   - macOS: `~/Library/Application Support/topbar-runner/config.toml`
