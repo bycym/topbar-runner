@@ -118,10 +118,10 @@ def test_view_logs_shows_only_current_run_and_refreshes(tmp_path: Path, monkeypa
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     log_path = tmp_path / "custom.log"
-    previous = "old run\n"
-    log_path.write_text(previous, encoding="utf-8")
+    log_path.write_bytes(b"old run\r\n")
+    log_start = log_path.stat().st_size
     window = TopbarWindow(
-        tmp_path / "config.toml", AppConfig(plugin_dir=tmp_path), log_path, len(previous)
+        tmp_path / "config.toml", AppConfig(plugin_dir=tmp_path), log_path, log_start
     )
     chip = window.findChild(QtWidgets.QPushButton, "settingsChip")
     assert chip is not None

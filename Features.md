@@ -44,7 +44,7 @@
   - macOS LaunchAgent plist.
   - Linux XDG autostart desktop file.
   - Windows Startup folder batch file.
-- Portable packaging flow is documented under `packaging/` with a PyInstaller spec for macOS, Linux, and Windows builds.
+- Portable packaging flow is documented under `packaging/` with a PyInstaller spec for macOS and Linux folders and a single Windows executable.
 - Manually run GitHub Actions to test, build, and smoke test `apple-silicon` and `intel` macOS archives, plus Ubuntu and Windows archives.
 - Optional release selection publishes all four archives under the next numeric Git tag, or a manually supplied tag, after successful builds.
 - Diagnostic logging writes to a local log file.
