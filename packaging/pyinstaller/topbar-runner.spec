@@ -20,14 +20,12 @@ a = Analysis(
     optimize=0,
 )
 pyz = PYZ(a.pure)
-onefile = sys.platform == "win32"
 
 exe = EXE(
     pyz,
     a.scripts,
-    *([a.binaries, a.datas] if onefile else []),
     [],
-    exclude_binaries=not onefile,
+    exclude_binaries=True,
     name="topbar-runner",
     debug=True,
     bootloader_ignore_signals=False,
@@ -40,20 +38,19 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
-if not onefile:
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.datas,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
-        name="topbar-runner",
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="topbar-runner",
+)
+if sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name="topbar-runner.app",
+        icon=None,
+        bundle_identifier="com.local.topbar-runner",
     )
-    if sys.platform == "darwin":
-        app = BUNDLE(
-            coll,
-            name="topbar-runner.app",
-            icon=None,
-            bundle_identifier="com.local.topbar-runner",
-        )

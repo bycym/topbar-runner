@@ -139,19 +139,28 @@ jobs:
       - name: Verify macOS app signature
         if: runner.os == 'macOS'
         run: codesign --verify --deep --strict dist/topbar-runner.app
-      - name: Smoke test packaged app
-        if: runner.os == 'Windows'
-        run: dist/topbar-runner.exe --console --plugin-dir examples/plugins
       - name: Archive macOS app
         if: runner.os == 'macOS'
         run: tar -C dist -czf "topbar-runner-${ARCHIVE_LABEL}-${{ matrix.platform }}.tar.gz" topbar-runner.app
       - name: Archive Linux app
         if: runner.os == 'Linux'
         run: tar -C dist -czf "topbar-runner-${ARCHIVE_LABEL}-ubuntu.tar.gz" topbar-runner
-      - name: Name Windows executable
+      - name: Archive Windows app
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Copy-Item dist/topbar-runner.exe "topbar-runner-$($env:ARCHIVE_LABEL)-windows.exe"
+        run: Compress-Archive -Path dist/topbar-runner -DestinationPath "topbar-runner-$($env:ARCHIVE_LABEL)-windows.zip"
+      - name: Smoke test Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = "topbar-runner-$($env:ARCHIVE_LABEL)-windows.zip"
+          $unpacked = Join-Path $env:RUNNER_TEMP 'topbar-runner-archive'
+          Expand-Archive -Path $archive -DestinationPath $unpacked
+          $bundle = Join-Path $unpacked 'topbar-runner'
+          if (!(Test-Path (Join-Path $bundle '_internal/python313.dll'))) {
+            throw 'Packaged Python DLL missing from Windows archive.'
+          }
+          & (Join-Path $bundle 'topbar-runner.exe') --console --plugin-dir examples/plugins
       - uses: actions/upload-artifact@v4
         with:
           name: topbar-runner-${{ matrix.platform }}
