@@ -4,7 +4,7 @@ Portable builds use PyInstaller from the optional Poetry `build` group. Runtime 
 
 Run `Build and release` manually in GitHub Actions. Each run tests all platforms, builds and smoke tests each native app, and saves Apple Silicon and Intel macOS and Ubuntu `.tar.gz` archives plus a Windows `.zip` archive as workflow artifacts. On macOS, choose `apple-silicon` for Apple Silicon or `intel` for Intel. Select `Publish a GitHub Release` and leave `release_tag` empty to advance the highest numeric `v` tag. Dotted tags increment their last number; a whole-number tag starts a new series, so after `v1.3`, a manual `v2` makes the next automatic release `v2.1`. Nonnumeric tags are ignored for automatic numbering. With no numeric tags, the first release is `v0.1.0`. An existing tag must point to the selected commit; if absent, publication creates it at that commit. The Ubuntu runner installs Qt's required system libraries, including `libegl1`, before tests and packaging.
 
-Portable apps run Python plugins with a separate `python3` or `python` executable found on `PATH`; users need Python installed. A plugin can override its interpreter in metadata. On macOS and Linux, shell plugins use `bash`.
+Portable apps run Python plugins with a separate `python3` or `python` executable found on `PATH` (preferring `python3`); users need Python installed. Install each plugin's dependencies into that same interpreter, for example with `python3 -m pip install <package>` or `python -m pip install <package>` if `python` is selected. The bundled app Python does not run plugins. A plugin can override its interpreter in metadata; install its dependencies into that interpreter instead. On macOS and Linux, shell plugins use `bash`.
 
 ## macOS
 

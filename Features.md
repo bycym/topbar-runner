@@ -7,6 +7,7 @@
 - Lexical plugin ordering by filename.
 - xbar-style interval filenames: `name.5s.py`, `name.15m.py`, `name.1h.py`, `name.1d.py`.
 - Python plugin support by default, plus shell plugin files ending in `.sh`.
+- Windows Python plugins write UTF-8 stdout and stderr, including emoji, in both UI and console mode.
 - xbar/BitBar stdout parsing for headline, separators, submenus, and item attributes.
 - `dropdown=false` top-level items become extra topbar chips.
 - `alternate=true` popup items display while Alt/Option is held.

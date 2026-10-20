@@ -20,5 +20,6 @@ poetry run topbar-runner --console --plugin-dir examples/plugins
 ```
 
 Name plugins like `weather.5m.py` or `status.1h.sh` to set their refresh interval.
+Install each Python plugin's dependencies into the Python interpreter that runs it. Source runs use the Poetry environment; portable builds use `python3` (or `python`) from `PATH`. See [Manual](MANUAL.md#python-plugin-dependencies).
 
 See [Manual](MANUAL.md) for plugin output, actions, settings, and keybindings; [Features](Features.md) for supported behavior; and [Packaging](packaging/README.md) for portable builds.

@@ -7,7 +7,52 @@ from pathlib import Path
 from topbar_runner.cache import RenderCache
 from topbar_runner.filenames import parse_plugin_filename
 from topbar_runner.parser import parse_stdout
-from topbar_runner.runner import PluginRunner, PluginRuntime, runtime_from_plugin
+from topbar_runner.runner import (
+    PluginRunner,
+    PluginRuntime,
+    plugin_environment_overrides,
+    runtime_from_plugin,
+)
+
+
+def test_windows_python_plugin_uses_utf8_output(tmp_path: Path, monkeypatch) -> None:
+    script = tmp_path / "emoji.5s.py"
+    script.write_text("print('😀')\n", encoding="utf-8")
+    plugin = parse_plugin_filename(script)
+    assert plugin is not None
+    runtime = PluginRuntime(
+        plugin=plugin,
+        config_path=tmp_path / "c.toml",
+        extra_env={"PYTHONIOENCODING": "cp1252"},
+    )
+    monkeypatch.setattr("topbar_runner.runner.sys.platform", "win32")
+
+    env = PluginRunner._env(runtime, "manual")
+
+    assert env["PYTHONIOENCODING"] == "utf-8"
+    assert env["TOPBAR_RUNNER_HOST_OS"] == "win32"
+    assert "PYTHONUTF8" not in plugin_environment_overrides(runtime, "manual")
+
+    result = asyncio.run(PluginRunner().trigger(runtime))
+    assert result is not None and result.ok
+    assert result.cached is not None
+    assert result.cached.render.headline is not None
+    assert result.cached.render.headline.text == "😀"
+
+
+def test_windows_shell_plugin_keeps_output_encoding(tmp_path: Path, monkeypatch) -> None:
+    script = tmp_path / "shell.5s.sh"
+    script.write_text("echo ok\n", encoding="utf-8")
+    plugin = parse_plugin_filename(script)
+    assert plugin is not None
+    runtime = PluginRuntime(
+        plugin=plugin,
+        config_path=tmp_path / "c.toml",
+        extra_env={"PYTHONIOENCODING": "cp1252"},
+    )
+    monkeypatch.setattr("topbar_runner.runner.sys.platform", "win32")
+
+    assert plugin_environment_overrides(runtime, "manual")["PYTHONIOENCODING"] == "cp1252"
 
 
 def test_frozen_app_uses_system_python_for_plugins(tmp_path: Path, monkeypatch) -> None:

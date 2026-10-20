@@ -48,6 +48,12 @@ Filename intervals follow xbar-style suffixes:
 
 Files without interval suffix default to 60 seconds.
 
+## Python Plugin Dependencies
+
+Install each Python plugin's required packages into the interpreter used to run that plugin. When running Topbar Runner from source with Poetry, plugins use the Poetry environment's Python by default; add their packages to that environment. In a portable build, plugins use the first `python3` or `python` found on `PATH`, so install packages with that same interpreter, for example `python3 -m pip install requests` or, when `python` is selected, `python -m pip install requests`. The Python bundled inside the portable app does not run plugins.
+
+If a plugin sets `runtime.interpreter` in its metadata, install its packages into that interpreter instead.
+
 ## Plugin Output
 
 Plugins print xbar/BitBar-style text:
@@ -90,6 +96,7 @@ Each plugin run receives:
 - `TOPBAR_RUNNER_HOST_OS`: Python platform string.
 
 Plugin process working directory is the plugin directory.
+On Windows, Python plugins receive `PYTHONIOENCODING=utf-8`, so printed Unicode and emoji work in UI and console mode. The app reads plugin stdout and stderr as UTF-8. `PYTHONUTF8` is not required.
 
 Same plugin does not run twice at once. If a refresh happens while it is still running, one pending rerun is queued.
 Filesystem reloads are debounced and ignored unless the direct plugin files or their modification times changed. Plugin cache writes should not cause rerun loops.

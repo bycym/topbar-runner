@@ -18,7 +18,7 @@ from topbar_runner.filenames import PluginFile, apply_plugin_preferences, discov
 from topbar_runner.launch_at_login import launch_command, set_launch_at_login
 from topbar_runner.logging import configure_file_logging, get_logger
 from topbar_runner.parser import MenuItem, PluginRender
-from topbar_runner.runner import runtime_from_plugin
+from topbar_runner.runner import plugin_environment_overrides, runtime_from_plugin
 
 try:
     from PySide6 import QtCore, QtGui, QtWidgets
@@ -61,14 +61,7 @@ class QtPluginRunner(QtCore.QObject):
         process.setArguments([str(plugin_path)])
         process.setWorkingDirectory(str(plugin_dir))
         env = QtCore.QProcessEnvironment.systemEnvironment()
-        for key, value in {
-            **runtime.extra_env,
-            "TOPBAR_RUNNER_REASON": reason,
-            "TOPBAR_RUNNER_PLUGIN_PATH": str(plugin_path),
-            "TOPBAR_RUNNER_PLUGIN_DIR": str(plugin_dir),
-            "TOPBAR_RUNNER_CONFIG_PATH": str(self.config_path),
-            "TOPBAR_RUNNER_HOST_OS": sys.platform,
-        }.items():
+        for key, value in plugin_environment_overrides(runtime, reason).items():
             env.insert(key, value)
         process.setProcessEnvironment(env)
 

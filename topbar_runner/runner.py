@@ -132,17 +132,25 @@ class PluginRunner:
     @staticmethod
     def _env(runtime: PluginRuntime, reason: str) -> dict[str, str]:
         env = os.environ.copy()
-        env.update(runtime.extra_env)
-        env.update(
-            {
-                "TOPBAR_RUNNER_REASON": reason,
-                "TOPBAR_RUNNER_PLUGIN_PATH": str(runtime.plugin.path.resolve()),
-                "TOPBAR_RUNNER_PLUGIN_DIR": str(runtime.plugin.path.parent.resolve()),
-                "TOPBAR_RUNNER_CONFIG_PATH": str(runtime.config_path),
-                "TOPBAR_RUNNER_HOST_OS": sys.platform,
-            }
-        )
+        env.update(plugin_environment_overrides(runtime, reason))
         return env
+
+
+def plugin_environment_overrides(runtime: PluginRuntime, reason: str) -> dict[str, str]:
+    """Build environment overrides shared by console and Qt plugin runners."""
+    env = dict(runtime.extra_env)
+    if sys.platform == "win32" and runtime.plugin.kind == "python":
+        env["PYTHONIOENCODING"] = "utf-8"
+    env.update(
+        {
+            "TOPBAR_RUNNER_REASON": reason,
+            "TOPBAR_RUNNER_PLUGIN_PATH": str(runtime.plugin.path.resolve()),
+            "TOPBAR_RUNNER_PLUGIN_DIR": str(runtime.plugin.path.parent.resolve()),
+            "TOPBAR_RUNNER_CONFIG_PATH": str(runtime.config_path),
+            "TOPBAR_RUNNER_HOST_OS": sys.platform,
+        }
+    )
+    return env
 
 
 def runtime_from_plugin(plugin: PluginFile, config_path: Path) -> PluginRuntime:
